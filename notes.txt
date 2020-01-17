@@ -1,0 +1,104 @@
+
+https://www.w3.org/TR/webauthn/
+https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#Examples
+https://www.imperialviolet.org/2018/03/27/webauthn.html
+
+--------------------------------------------------
+
+https://webauthndemo.appspot.com
+
+--------------------------------------------------
+
+		GET https://webauthndemo.appspot.com/BeginMakeCredential
+		>>>
+			{}
+		<<<
+			{
+				"rp": {
+					"id": "webauthndemo.appspot.com",
+					"name": "webauthn-demo"
+				},
+				"user": {
+					"name": "craig.francis",
+					"displayName": "craig.francis",
+					"id": "Y3JhaWcuZnJhbmNpc0BnbWFpbC5jb20="
+				},
+				"challenge": "UF83LUp3xnvTMC5Cfw9sBDuc2DTYUe1nVjkyypfqT88=",
+				"pubKeyCredParams": [
+					{"type": "public-key","alg": -7},
+					{"type": "public-key","alg": -35},
+					{"type": "public-key","alg": -36},
+					{"type": "public-key","alg": -257},
+					{"type": "public-key","alg": -258},
+					{"type": "public-key","alg": -259},
+					{"type": "public-key","alg": -37},
+					{"type": "public-key","alg": -38},
+					{"type": "public-key","alg": -39}
+				],
+				"authenticatorSelection": {
+					"requireResidentKey": false
+				},
+				"session": {
+					"id": 5076324926357504,
+					"challenge": "UF83LUp3xnvTMC5Cfw9sBDuc2DTYUe1nVjkyypfqT88=",
+					"origin": "webauthndemo.appspot.com"
+				}
+			}
+
+	--------------------------------------------------
+
+		POST https://webauthndemo.appspot.com/FinishMakeCredential
+		>>>
+			{
+				"id": "4MmQQekq2sLqiOc6LXPPjT41j00WLBsFUHxd3R2cNFCblUoSWjOczBuHBa1j-irk4XtLvXgWjDpmZo6L0lyQLg",
+				"type": "public-key",
+				"rawId": "4MmQQekq2sLqiOc6LXPPjT41j00WLBsFUHxd3R2cNFCblUoSWjOczBuHBa1j+irk4XtLvXgWjDpmZo6L0lyQLg==",
+				"response": {
+					"clientDataJSON": "eyJjaGFsbGVuZ2UiOiJVRjgzTFVwM3hudlRNQzVDZnc5c0JEdWMyRFRZVWUxblZqa3l5cGZxVDg4Iiwib3JpZ2luIjoiaHR0cHM6Ly93ZWJhdXRobmRlbW8uYXBwc3BvdC5jb20iLCJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIn0=",
+					"attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVjERsx/uWedVbLbkJLhyNnl4dArdYDwtIEsdwli4eSPWthBAAAAAAAAAAAAAAAAAAAAAAAAAAAAQODJkEHpKtrC6ojnOi1zz40+NY9NFiwbBVB8Xd0dnDRQm5VKEloznMwbhwWtY/oq5OF7S714Fow6ZmaOi9JckC6lAQIDJiABIVgg54ZIfJs+hla+uqFQPvslGElGq0cjF0CImG/2FxcVc8EiWCAC5+3rPDmlSDDSQLzf/3T0u+sBiSAtjwuKq5WUwLfUcw=="
+				}
+			}
+		<<<
+			{"success":true,"message":"Successfully created credential"}
+
+	--------------------------------------------------
+
+		GET https://webauthndemo.appspot.com/BeginGetAssertion
+		>>>
+			{}
+		<<<
+			{
+				"challenge": "e/ZNAx6HeroMJQs4En+7kOjYn32EkGCSS0ZD4XGSpmI=",
+				"rpId": "webauthndemo.appspot.com",
+				"allowCredentials": [
+					{
+						"type": "public-key",
+						"id": "4MmQQekq2sLqiOc6LXPPjT41j00WLBsFUHxd3R2cNFCblUoSWjOczBuHBa1j+irk4XtLvXgWjDpmZo6L0lyQLg=="
+					}
+				],
+				"session": {
+					"id": 5657382461898752,
+					"challenge": "e/ZNAx6HeroMJQs4En+7kOjYn32EkGCSS0ZD4XGSpmI=",
+					"origin": "webauthndemo.appspot.com"
+				}
+			}
+
+	--------------------------------------------------
+
+		GET https://webauthndemo.appspot.com/BeginMakeCredential
+		>>>
+			{
+				"id": "4MmQQekq2sLqiOc6LXPPjT41j00WLBsFUHxd3R2cNFCblUoSWjOczBuHBa1j-irk4XtLvXgWjDpmZo6L0lyQLg",
+				"type": "public-key",
+				"rawId": "4MmQQekq2sLqiOc6LXPPjT41j00WLBsFUHxd3R2cNFCblUoSWjOczBuHBa1j+irk4XtLvXgWjDpmZo6L0lyQLg==",
+				"response": {
+					"clientDataJSON": "eyJjaGFsbGVuZ2UiOiJlX1pOQXg2SGVyb01KUXM0RW4tN2tPalluMzJFa0dDU1MwWkQ0WEdTcG1JIiwib3JpZ2luIjoiaHR0cHM6Ly93ZWJhdXRobmRlbW8uYXBwc3BvdC5jb20iLCJ0eXBlIjoid2ViYXV0aG4uZ2V0In0=",
+					"authenticatorData": "Rsx/uWedVbLbkJLhyNnl4dArdYDwtIEsdwli4eSPWtgBAAAABQ==",
+					"signature": "MEYCIQDTYt9mSVfzTUSyYikVoMYvAvcix+YG8nopnnb708rIpAIhALMGJWCZqtTlphuwYIaFsHTol7ywrQNGUGFWLC9ahQCG",
+					"userHandle": ""
+				}
+			}
+		<<<
+			{"success":true,"message":"Successful assertion","handle":"E0C99041E92ADAC2EA88E73A2D73CF8D3E358F4D162C1B05507C5DDD1D9C34509B954A125A339CCC1B8705AD63FA2AE4E17B4BBD78168C3A66668E8BD25C902E"}
+
+	--------------------------------------------------
