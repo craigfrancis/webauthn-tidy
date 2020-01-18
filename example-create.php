@@ -6,6 +6,7 @@
 	$host = preg_replace('/[^a-z0-9\.]/', '', ($_SERVER['HTTP_HOST'] ?? ''));
 	$uri = ($_SERVER['REQUEST_URI'] ?? '');
 	$origin = 'https://' . $host;
+	$algorithm = -7; // Elliptic curve algorithm ECDSA with SHA-256, https://www.iana.org/assignments/cose/cose.xhtml#algorithms
 
 	$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
@@ -141,6 +142,7 @@
 			data-auth-user-id="125"
 			data-auth-user-name="craig@example.com"
 			data-auth-user-display="Craig Francis"
+			data-auth-alg="<?= htmlentities($algorithm) ?>"
 			data-auth-challenge="<?= htmlentities(base64_encode($challenge)) ?>"
 			data-auth-response-id="auth_response" />
 

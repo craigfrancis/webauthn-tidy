@@ -31,7 +31,7 @@
 						'pubKeyCredParams': [
 								{
 									'type': "public-key", // As of March 2019, only "public-key" may be used.
-									'alg': -7 // Elliptic curve algorithm ECDSA with SHA-256, https://www.iana.org/assignments/cose/cose.xhtml#algorithms
+									'alg': button.getAttribute('data-auth-alg')
 								}
 							],
 						'timeout': 10000, // In milliseconds
