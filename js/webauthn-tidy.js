@@ -6,7 +6,7 @@
 
 		'use strict';
 
-		if (!('Uint8Array' in window) || !('TextDecoder' in window) || !('credentials' in window.navigator)) {
+		if (!('Uint8Array' in window) || !('credentials' in window.navigator)) {
 			return;
 		}
 
@@ -22,7 +22,13 @@
 		}
 
 		function uint8array_to_hex(array) { // https://stackoverflow.com/a/40031979/6632
-			return Array.prototype.map.call(array, x => ('00' + x.toString(16)).slice(-2)).join('');
+			return Array.prototype.map.call(array, function (x) {
+					return ('00' + x.toString(16)).slice(-2);
+				}).join('');
+		}
+
+		function uint8array_to_buffer(array) { // https://stackoverflow.com/a/54646864/6632
+			return array.buffer.slice(array.byteOffset, array.byteLength + array.byteOffset)
 		}
 
 		function buffer_to_hex(buffer) {
@@ -428,6 +434,72 @@
 			})();
 
 	//--------------------------------------------------
+	// Parsing of authenticator data
+
+		function authenticator_buffer_parse(authenticator_buffer) {
+
+				// https://w3c.github.io/webauthn/#sctn-attestation
+				// https://w3c.github.io/webauthn/#authenticator-data
+				// https://w3c.github.io/webauthn/#sctn-attested-credential-data
+				// https://webauthn.guide/
+				// https://apowers313.github.io/fido2-lib/parser.js.html
+
+			var dataView  = new DataView(authenticator_buffer, 0);
+
+			var offset    = 0;
+			var rpIdHash  = dataView.buffer.slice(offset, offset + 32); offset += 32;
+			var flags     = dataView.getUint8(offset); offset += 1;
+			var signCount = dataView.getUint32(offset, false); offset += 4; // 32-bit unsigned big-endian integer
+
+				// console.log((flags >>> 0).toString(2).padEnd(8, '0'));
+
+			var data = {
+					'rpIdHash': buffer_to_hex(rpIdHash),
+					'flags': {
+							'UP':    !!(flags & 0x01), // 1   = Bit 0: User Present (UP) result.
+							'RFU1':  !!(flags & 0x02), // 2   = Bit 1: Reserved for future use (RFU1).
+							'UV':    !!(flags & 0x04), // 4   = Bit 2: User Verified (UV) result.
+							'RFU2a': !!(flags & 0x08), // 8   = Bit 3: Reserved for future use (RFU2).
+							'RFU2b': !!(flags & 0x10), // 16  = Bit 4: Reserved for future use (RFU2).
+							'RFU2c': !!(flags & 0x20), // 32  = Bit 5: Reserved for future use (RFU2).
+							'AT':    !!(flags & 0x40), // 64  = Bit 6: Attested credential data included (AT).
+							'ED':    !!(flags & 0x80)  // 128 = Bit 7: Extension data included (ED).
+						},
+					'signCount': signCount,
+					'attestedCredentialData': null,
+					'extensions': null
+				};
+
+			if (data['flags']['AT']) {
+
+				var aaguid = dataView.buffer.slice(offset, offset + 16); offset += 16;
+				var credentialIdLength = dataView.getUint16(offset); offset += 2; // 53 to 55
+				var credentialId = dataView.buffer.slice(offset, credentialIdLength); offset += credentialIdLength;
+				var publicKeyBytes = dataView.buffer.slice(offset); // TODO: How do we know how long this is? https://stackoverflow.com/q/59799729
+				var publicKeyObject = CBOR.decode(publicKeyBytes);
+
+				data['attestedCredentialData'] = {
+						'aaguid': buffer_to_base64(aaguid),
+						'credentialId': buffer_to_base64(credentialId),
+						'publicKey': {
+								'type': publicKeyObject[1], // 2 = Elliptic Curve; using more magic numbers for keys and values, does this save a few bytes somewhere?
+								'algorithm': publicKeyObject[3], // -7 = ECDSA with SHA256
+								'curve_type': publicKeyObject[-1], // 1 = P-256
+								'curve_x': uint8array_to_base64(publicKeyObject[-2]),
+								'curve_y': uint8array_to_base64(publicKeyObject[-3])
+							},
+					};
+
+			}
+
+			if (data['flags']['ED']) {
+			}
+
+			return data;
+
+		}
+
+	//--------------------------------------------------
 	// Credentials2
 
 		window.navigator.credentials2 = {
@@ -441,49 +513,9 @@
 							navigator.credentials.create(options).then(function(result) {
 
 									//--------------------------------------------------
-									// Config
+									// Authenticator data
 
-										var decoder = new TextDecoder('utf-8')
-
-									//--------------------------------------------------
-									// Client data
-
-										var client_data = JSON.parse(decoder.decode(result.response.clientDataJSON));
-
-										client_data = {
-												'type': client_data.type,
-												'origin': client_data.origin,
-												'challenge': client_data.challenge.replace(/-/g, '+').replace(/_/g, '/')
-											};
-
-									//--------------------------------------------------
-									// Attestation data
-
-											// https://webauthn.guide/
-
-										var attestation_data = CBOR.decode(result.response.attestationObject);
-
-										var dataView = new DataView(new ArrayBuffer(2));
-										var idLenBytes = attestation_data.authData.slice(53, 55);
-
-										idLenBytes.forEach(function(value, index) {
-												dataView.setUint8(index, value)
-											});
-
-										var credentialIdLength = dataView.getUint16();
-
-										var credentialId = attestation_data.authData.slice(55, credentialIdLength);
-										var publicKeyBytes = attestation_data.authData.slice(55 + credentialIdLength);
-										var publicKeyObject = CBOR.decode(publicKeyBytes.buffer);
-
-										attestation_data = {
-												'id': uint8array_to_base64(credentialId),
-												'type': publicKeyObject[1], // 2 = Elliptic Curve; using more magic numbers for keys and values, does this save a few bytes somewhere?
-												'algorithm': publicKeyObject[3], // -7 = ECDSA with SHA256
-												'curve_type': publicKeyObject[-1], // 1 = P-256
-												'curve_x': uint8array_to_base64(publicKeyObject[-2]),
-												'curve_y': uint8array_to_base64(publicKeyObject[-3])
-											};
+										var attestation_object = CBOR.decode(result.response.attestationObject);
 
 									//--------------------------------------------------
 									// Complete
@@ -491,9 +523,10 @@
 										resolve({
 												'id': result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
 												'type': result.type,
+												'auth': authenticator_buffer_parse(uint8array_to_buffer(attestation_object.authData)),
 												'response': {
-														'client': client_data,
-														'attestation': attestation_data
+														'clientDataJSON': buffer_to_base64(result.response.clientDataJSON),
+														'attestationObject': uint8array_to_base64(result.response.attestationObject),
 													}
 											});
 
@@ -516,65 +549,7 @@
 								options['publicKey']['allowCredentials'][k]['id'] = base64_to_uint8array(options['publicKey']['allowCredentials'][k]['id']);
 							}
 
-							// var buffer = new TextEncoder('utf-8').encode(options.publicKey.rpId);
-							// crypto.subtle.digest('SHA-256', buffer).then(function(hash) {
-							// 	console.log(buffer_to_hex(hash));
-							// });
-
 							navigator.credentials.get(options).then(function(result) {
-
-									//--------------------------------------------------
-									// Config
-
-										var decoder = new TextDecoder('utf-8')
-
-									//--------------------------------------------------
-									// Client data
-
-										// var client_data = JSON.parse(decoder.decode(result.response.clientDataJSON));
-										//
-										// client_data = {
-										// 		'type': client_data.type,
-										// 		'origin': client_data.origin,
-										// 		'challenge': client_data.challenge.replace(/-/g, '+').replace(/_/g, '/')
-										// 	};
-
-									//--------------------------------------------------
-									// Authenticator data
-
-											// Should probably skip this, as these
-											// details should be returned from the
-											// signed data.
-											//
-											// https://w3c.github.io/webauthn/#authenticator-data
-											// https://apowers313.github.io/fido2-lib/parser.js.html
-
-										var dataView  = new DataView(result.response.authenticatorData, 0);
-										var offset    = 0;
-										var rpIdHash  = dataView.buffer.slice(offset, offset + 32); offset += 32;
-										var flags     = dataView.getUint8(offset); offset += 1;
-										var signCount = dataView.getUint32(offset, false); offset += 4; // 32-bit unsigned big-endian integer
-
-										rpIdHash = buffer_to_hex(rpIdHash);
-
-											// console.log((flags >>> 0).toString(2).padEnd(8, '0'));
-
-										flags = {
-												'UP':    !!(flags & 0x01), // 1   = Bit 0: User Present (UP) result.
-												'RFU1':  !!(flags & 0x02), // 2   = Bit 1: Reserved for future use (RFU1).
-												'UV':    !!(flags & 0x04), // 4   = Bit 2: User Verified (UV) result.
-												'RFU2a': !!(flags & 0x08), // 8   = Bit 3: Reserved for future use (RFU2).
-												'RFU2b': !!(flags & 0x10), // 16  = Bit 4: Reserved for future use (RFU2).
-												'RFU2c': !!(flags & 0x20), // 32  = Bit 5: Reserved for future use (RFU2).
-												'AT':    !!(flags & 0x40), // 64  = Bit 6: Attested credential data included (AT).
-												'ED':    !!(flags & 0x80)  // 128 = Bit 7: Extension data included (ED).
-											};
-
-										var auth_data = {
-												'rpIdHash': rpIdHash,
-												'flags': flags,
-												'signCount': signCount,
-											};
 
 									//--------------------------------------------------
 									// Complete
@@ -582,11 +557,11 @@
 										resolve({
 												'id': result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
 												'type': result.type,
+												'auth': authenticator_buffer_parse(result.response.authenticatorData),
 												'response': {
-														'client_base64': buffer_to_base64(result.response.clientDataJSON),
-														'signature_base64': buffer_to_base64(result.response.signature),
-														'auth_base64': buffer_to_base64(result.response.authenticatorData),
-														'auth': auth_data,
+														'clientDataJSON': buffer_to_base64(result.response.clientDataJSON),
+														'signature': buffer_to_base64(result.response.signature),
+														'authenticatorData': buffer_to_base64(result.response.authenticatorData),
 													}
 											});
 

@@ -40,27 +40,38 @@
 		//--------------------------------------------------
 		// Parse
 
-			$create_auth = json_decode($_POST['auth_json'], true);
+			$webauthn_data = json_decode($_POST['auth_json'], true);
+
+		//--------------------------------------------------
+		// Client data
+
+			$client_data_json = base64_decode($webauthn_data['response']['clientDataJSON']);
+
+			$client_data = json_decode($client_data_json, true);
 
 		//--------------------------------------------------
 		// Checks basic
 
-			if (($create_auth['type'] ?? '') !== 'public-key') {
+			if (($webauthn_data['type'] ?? '') !== 'public-key') {
 				$errors[] = 'Returned type is not a "public-key".';
 			}
 
-			if (($create_auth['response']['client']['type'] ?? '') !== 'webauthn.create') {
+			if (($client_data['type'] ?? '') !== 'webauthn.create') {
 				$errors[] = 'Returned type is not "webauthn.create".';
 			}
 
-			if (($create_auth['response']['client']['origin'] ?? '') !== $origin) {
+			if (($client_data['origin'] ?? '') !== $origin) {
 				$errors[] = 'Returned origin is not "' . $origin . '".';
+			}
+
+			if (!hash_equals(hash('sha256', $host), ($webauthn_data['auth']['rpIdHash'] ?? ''))) {
+				$errors[] = 'The Relying Party ID hash is not the same.';
 			}
 
 		//--------------------------------------------------
 		// Check challenge
 
-			$response_challenge = ($create_auth['response']['client']['challenge'] ?? '');
+			$response_challenge = ($client_data['challenge'] ?? '');
 			$response_challenge = base64_decode(strtr($response_challenge, '-_', '+/'));
 
 			if (!$challenge) {
@@ -74,11 +85,16 @@
 		//--------------------------------------------------
 		// Get public key
 
-			$key_details = ($create_auth['response']['attestation'] ?? '');
+			$key_details = ($webauthn_data['auth']['attestedCredentialData']['publicKey'] ?? '');
+			$key_pem = NULL;
 
 			if (!$key_details) {
 
-				$errors[] = 'No attestation details returned.';
+				$errors[] = 'No public key found.';
+
+			} else if ($key_details['algorithm'] != $algorithm) {
+
+				$errors[] = 'Different algorithm used.';
 
 			} else {
 
@@ -93,10 +109,12 @@
 
 			if (count($errors) == 0) {
 
-				$_SESSION['create_auth'] = $create_auth; // Only for debugging.
+				$_SESSION['webauthn_data_create'] = $webauthn_data; // Only for debugging.
 
-				$_SESSION['user_key_id'] = $create_auth['id'];
+				$_SESSION['user_key_id'] = $webauthn_data['id'];
 				$_SESSION['user_key_public'] = $key_pem;
+
+				// Ignore $webauthn_data['auth']['signCount'], it's set to 0.
 
 				header('Location: ./example-check.php');
 				exit('<p><a href="./example-check.php">Next</a></p>');
@@ -113,7 +131,7 @@
 			echo "\n--------------------------------------------------\n\n";
 			print_r($errors);
 			echo "\n--------------------------------------------------\n\n";
-			print_r($create_auth);
+			print_r($webauthn_data);
 			echo "\n--------------------------------------------------\n\n";
 			print_r($key_pem);
 			echo "\n--------------------------------------------------\n\n";

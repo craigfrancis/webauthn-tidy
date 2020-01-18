@@ -17,7 +17,7 @@
 //--------------------------------------------------
 // Auth details
 
-	$create_auth = ($_SESSION['create_auth'] ?? ''); // Only for debugging.
+	$create_auth = ($_SESSION['webauthn_data_create'] ?? ''); // Only for debugging.
 
 	$user_key_id = ($_SESSION['user_key_id'] ?? '');
 	$user_key_public = ($_SESSION['user_key_public'] ?? '');
@@ -55,43 +55,47 @@
 		//--------------------------------------------------
 		// Parse
 
-			$check_auth = json_decode($_POST['auth_json'], true);
+			$webauthn_data = json_decode($_POST['auth_json'], true);
 
 		//--------------------------------------------------
 		// Client data
 
-			$client_data = base64_decode($check_auth['response']['client_base64']);
+			$client_data_json = base64_decode($webauthn_data['response']['clientDataJSON']);
 
-			$check_auth['response']['client'] = json_decode($client_data, true);
+			$client_data = json_decode($client_data_json, true);
 
 		//--------------------------------------------------
 		// Auth data
 
-			$auth_data = base64_decode($check_auth['response']['auth_base64']);
+			$auth_data = base64_decode($webauthn_data['response']['authenticatorData']);
 
 		//--------------------------------------------------
 		// Checks basic
 
-			if (($check_auth['id'] ?? '') !== $user_key_id) {
+			if (($webauthn_data['id'] ?? '') !== $user_key_id) {
 				$errors[] = 'Returned type is not for the same id.';
 			}
 
-			if (($check_auth['type'] ?? '') !== 'public-key') {
+			if (($webauthn_data['type'] ?? '') !== 'public-key') {
 				$errors[] = 'Returned type is not a "public-key".';
 			}
 
-			if (($check_auth['response']['client']['type'] ?? '') !== 'webauthn.get') {
+			if (($client_data['type'] ?? '') !== 'webauthn.get') {
 				$errors[] = 'Returned type is not "webauthn.get".';
 			}
 
-			if (($check_auth['response']['client']['origin'] ?? '') !== $origin) {
+			if (($client_data['origin'] ?? '') !== $origin) {
 				$errors[] = 'Returned origin is not "' . $origin . '".';
+			}
+
+			if (!hash_equals(hash('sha256', $host), ($webauthn_data['auth']['rpIdHash'] ?? ''))) {
+				$errors[] = 'The Relying Party ID hash is not the same.';
 			}
 
 		//--------------------------------------------------
 		// Check challenge
 
-			$response_challenge = ($check_auth['response']['client']['challenge'] ?? '');
+			$response_challenge = ($client_data['challenge'] ?? '');
 			$response_challenge = base64_decode(strtr($response_challenge, '-_', '+/'));
 
 			if (!$challenge) {
@@ -103,7 +107,7 @@
 		//--------------------------------------------------
 		// Check signature
 
-			$signature = ($check_auth['response']['signature_base64'] ?? '');
+			$signature = ($webauthn_data['response']['signature'] ?? '');
 			if ($signature) {
 				$signature = base64_decode($signature);
 			}
@@ -127,7 +131,7 @@
 
 					$verify_data  = '';
 					$verify_data .= $auth_data;
-					$verify_data .= hash('sha256', $client_data, true); // Contains the $challenge
+					$verify_data .= hash('sha256', $client_data_json, true); // Contains the $challenge
 
 					if (openssl_verify($verify_data, $signature, $key_public, OPENSSL_ALGO_SHA256) === 1) {
 						$errors[] = 'Success!';
@@ -147,11 +151,14 @@
 			echo "\n--------------------------------------------------\n\n";
 			print_r($errors);
 			echo "\n--------------------------------------------------\n\n";
+			echo 'Sign Count: ' . ($webauthn_data['auth']['signCount'] ?? 0) . "\n";
+			echo "\n--------------------------------------------------\n\n";
 			print_r($user_key_public);
 			echo "\n--------------------------------------------------\n\n";
 			print_r(base64_encode($challenge) . "\n");
 			echo "\n--------------------------------------------------\n\n";
-			print_r($check_auth);
+			print_r($webauthn_data);
+			print_r($client_data);
 			echo "\n--------------------------------------------------\n\n";
 			print_r($create_auth);
 			echo "\n--------------------------------------------------\n\n";
