@@ -422,11 +422,14 @@
 								}
 						}
 					}
-
-					var ret = decodeItem();
-					if (offset !== data.byteLength)
-						throw "Remaining bytes";
-					return ret;
+					// var ret = decodeItem();
+					// if (offset !== data.byteLength)
+					// 	throw "Remaining bytes";
+					// return ret;
+					return {
+							'data': decodeItem(),
+							'length': offset,
+						};
 				}
 
 				return {'encode': encode, 'decode': decode};
@@ -475,24 +478,29 @@
 				var aaguid = dataView.buffer.slice(offset, offset + 16); offset += 16;
 				var credentialIdLength = dataView.getUint16(offset); offset += 2; // 53 to 55
 				var credentialId = dataView.buffer.slice(offset, credentialIdLength); offset += credentialIdLength;
-				var publicKeyBytes = dataView.buffer.slice(offset); // TODO: How do we know how long this is? https://stackoverflow.com/q/59799729
+				var publicKeyBytes = dataView.buffer.slice(offset);
 				var publicKeyObject = CBOR.decode(publicKeyBytes);
+
+				offset += publicKeyObject['length']; // The only way to determine the 'credentialPublicKey' size is via the CBOR encoded value.
 
 				data['attestedCredentialData'] = {
 						'aaguid': buffer_to_base64(aaguid),
 						'credentialId': buffer_to_base64(credentialId),
 						'publicKey': {
-								'type': publicKeyObject[1], // 2 = Elliptic Curve; using more magic numbers for keys and values, does this save a few bytes somewhere?
-								'algorithm': publicKeyObject[3], // -7 = ECDSA with SHA256
-								'curve_type': publicKeyObject[-1], // 1 = P-256
-								'curve_x': uint8array_to_base64(publicKeyObject[-2]),
-								'curve_y': uint8array_to_base64(publicKeyObject[-3])
+								'type': publicKeyObject['data'][1], // 2 = Elliptic Curve; using more magic numbers for keys and values, does this save a few bytes somewhere?
+								'algorithm': publicKeyObject['data'][3], // -7 = ECDSA with SHA256
+								'curve_type': publicKeyObject['data'][-1], // 1 = P-256
+								'curve_x': uint8array_to_base64(publicKeyObject['data'][-2]),
+								'curve_y': uint8array_to_base64(publicKeyObject['data'][-3])
 							},
 					};
 
 			}
 
 			if (data['flags']['ED']) {
+
+				// var extensionData = dataView.buffer.slice(offset);
+
 			}
 
 			return data;
@@ -528,7 +536,7 @@
 						var output = {
 								'id': result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
 								'type': result.type,
-								'auth': authenticator_buffer_parse(uint8array_to_buffer(attestation_object.authData)), // Something most websites will use; ref https://github.com/w3c/webauthn/issues/557
+								'auth': authenticator_buffer_parse(uint8array_to_buffer(attestation_object['data'].authData)), // Something most websites will use; ref https://github.com/w3c/webauthn/issues/557
 								'response': {
 										'clientDataJSON': buffer_to_base64(result.response.clientDataJSON),
 										'attestationObject': uint8array_to_base64(result.response.attestationObject),
