@@ -6,14 +6,29 @@
 	$host = preg_replace('/[^a-z0-9\.]/', '', ($_SERVER['HTTP_HOST'] ?? ''));
 	$uri = ($_SERVER['REQUEST_URI'] ?? '');
 	$origin = 'https://' . $host;
-	$algorithm = -7; // Elliptic curve algorithm ECDSA with SHA-256, https://www.iana.org/assignments/cose/cose.xhtml#algorithms
 
 	$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
-	header("Content-Security-Policy: default-src 'none'; base-uri 'none'; form-action " . $origin . $uri . "; img-src " . $origin . "; script-src " . $origin . "/js/; frame-ancestors 'none'; block-all-mixed-content;");
+	header("Content-Security-Policy: default-src 'none'; base-uri 'none'; form-action " . $origin . $uri . "; img-src " . $origin . "; script-src " . $origin . "/tidy/js/; frame-ancestors 'none'; block-all-mixed-content;");
 	header("Feature-Policy: accelerometer 'none'; autoplay 'none'; camera 'none'; document-domain 'none'; encrypted-media 'none'; focus-without-user-activation 'none'; fullscreen 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; payment 'none'; usb 'none'; xr-spatial-tracking 'none'; sync-xhr 'none'; picture-in-picture 'none';");
 
 	session_start();
+
+//--------------------------------------------------
+// Auth details
+
+	$create_auth = ($_SESSION['webauthn_data_create'] ?? ''); // Only for debugging.
+
+	$user_key_id = ($_SESSION['user_key_id'] ?? '');
+	$user_key_public = ($_SESSION['user_key_public'] ?? '');
+
+	if (!$user_key_id) {
+		exit('Missing user key id in session.');
+	}
+
+	if (!$user_key_public) {
+		exit('Missing user key public in session.');
+	}
 
 //--------------------------------------------------
 // Challenge
@@ -22,11 +37,11 @@
 
 		$challenge = random_bytes(32);
 
-		$_SESSION['create_challenge'] = $challenge;
+		$_SESSION['check_challenge'] = $challenge;
 
 	} else {
 
-		$challenge = ($_SESSION['create_challenge'] ?? '');
+		$challenge = ($_SESSION['check_challenge'] ?? '');
 
 	}
 
@@ -50,14 +65,23 @@
 			$client_data = json_decode($client_data_json, true);
 
 		//--------------------------------------------------
+		// Auth data
+
+			$auth_data = base64_decode($webauthn_data['response']['authenticatorData']);
+
+		//--------------------------------------------------
 		// Checks basic
+
+			if (($webauthn_data['id'] ?? '') !== $user_key_id) {
+				$errors[] = 'Returned type is not for the same id.';
+			}
 
 			if (($webauthn_data['type'] ?? '') !== 'public-key') {
 				$errors[] = 'Returned type is not a "public-key".';
 			}
 
-			if (($client_data['type'] ?? '') !== 'webauthn.create') {
-				$errors[] = 'Returned type is not "webauthn.create".';
+			if (($client_data['type'] ?? '') !== 'webauthn.get') {
+				$errors[] = 'Returned type is not "webauthn.get".';
 			}
 
 			if (($client_data['origin'] ?? '') !== $origin) {
@@ -80,44 +104,42 @@
 				$errors[] = 'The challenge has changed.';
 			}
 
-				// No further checks for $challenge?
-
 		//--------------------------------------------------
-		// Get public key
+		// Check signature
 
-			$key_details = ($webauthn_data['auth']['attestedCredentialData']['publicKey'] ?? '');
-			$key_pem = NULL;
+			$signature = ($webauthn_data['response']['signature'] ?? '');
+			if ($signature) {
+				$signature = base64_decode($signature);
+			}
 
-			if (!$key_details) {
-
-				$errors[] = 'No public key found.';
-
-			} else if ($key_details['algorithm'] != $algorithm) {
-
-				$errors[] = 'Different algorithm used.';
-
-			} else {
-
-				require_once('./example-openssl.php');
-
-				$key_pem = open_ssl::key_pem_get($key_details);
-
+			if (!$signature) {
+				$errors[] = 'No signature returned.';
 			}
 
 		//--------------------------------------------------
-		// Store
+		// Check
 
 			if (count($errors) == 0) {
 
-				$_SESSION['webauthn_data_create'] = $webauthn_data; // Only for debugging.
+				$key_public = openssl_pkey_get_public($user_key_public);
 
-				$_SESSION['user_key_id'] = $webauthn_data['id'];
-				$_SESSION['user_key_public'] = $key_pem;
+				if ($key_public === false) {
 
-				// Ignore $webauthn_data['auth']['signCount'], it's set to 0.
+					$errors[] = 'Public key invalid.';
 
-				header('Location: ./example-check.php');
-				exit('<p><a href="./example-check.php">Next</a></p>');
+				} else {
+
+					$verify_data  = '';
+					$verify_data .= $auth_data;
+					$verify_data .= hash('sha256', $client_data_json, true); // Contains the $challenge
+
+					if (openssl_verify($verify_data, $signature, $key_public, OPENSSL_ALGO_SHA256) === 1) {
+						$errors[] = 'Success!';
+					} else {
+						$errors[] = 'Invalid signature.';
+					}
+
+				}
 
 			}
 
@@ -127,13 +149,18 @@
 			header('Content-Type: text/plain; charset=UTF-8');
 
 			echo "\n--------------------------------------------------\n\n";
-			print_r(base64_encode($challenge));
-			echo "\n--------------------------------------------------\n\n";
 			print_r($errors);
 			echo "\n--------------------------------------------------\n\n";
-			print_r($webauthn_data);
+			echo 'Sign Count: ' . ($webauthn_data['auth']['signCount'] ?? 0) . "\n";
 			echo "\n--------------------------------------------------\n\n";
-			print_r($key_pem);
+			print_r($user_key_public);
+			echo "\n--------------------------------------------------\n\n";
+			print_r(base64_encode($challenge) . "\n");
+			echo "\n--------------------------------------------------\n\n";
+			print_r($webauthn_data);
+			print_r($client_data);
+			echo "\n--------------------------------------------------\n\n";
+			print_r($create_auth);
 			echo "\n--------------------------------------------------\n\n";
 			exit();
 
@@ -144,23 +171,26 @@
 <html lang="en-GB" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta charset="UTF-8" />
-	<title>Create</title>
-	<script src="./js/webauthn-tidy.js" async="async"></script>
-	<script src="./js/webauthn-create.js" async="async"></script>
+	<title>Check</title>
+	<script src="./js/tidy.js" async="async"></script>
+	<script src="./js/check.js" async="async"></script>
 </head>
 <body>
 
+	<h2>Stored Key ID</h2>
+	<p><pre><?= htmlentities($user_key_id) ?></pre></p>
+
+	<h2>Stored Key Public</h2>
+	<p><pre><?= htmlentities($user_key_public) ?></pre></p>
+
+	<h2>Check Details</h2>
 	<form action="<?= htmlentities($uri) ?>" method="post" accept-charset="UTF-8">
 
 		<input
 			type="button"
-			value="Create"
-			data-auth-org-name="Test Website"
+			value="Check"
 			data-auth-org-id="<?= htmlentities($host) ?>"
-			data-auth-user-id="125"
-			data-auth-user-name="craig@example.com"
-			data-auth-user-display="Craig Francis"
-			data-auth-alg="<?= htmlentities($algorithm) ?>"
+			data-auth-key-ids="<?= htmlentities(implode('|', [$user_key_id ?? ''])) ?>"
 			data-auth-challenge="<?= htmlentities(base64_encode($challenge)) ?>"
 			data-auth-response-id="auth_response" />
 

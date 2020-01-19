@@ -1,6 +1,6 @@
 <?php
 
-	class open_ssl {
+	class openssl {
 
 			// https://github.com/lbuchs/WebAuthn/blob/master/Attestation/AuthenticatorData.php
 			// @author Lukas Buchs

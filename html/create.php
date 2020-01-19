@@ -92,9 +92,9 @@
 
 			} else {
 
-				require_once('../example-openssl.php');
+				require_once('../openssl.php');
 
-				$key_pem = open_ssl::key_pem_get($key_details);
+				$key_pem = openssl::key_pem_get($key_details);
 
 			}
 
