@@ -149,6 +149,7 @@
 			echo 'Sign Count: ' . ($webauthn_data['auth']['signCount'] ?? 0) . "\n";
 			echo "\n--------------------------------------------------\n\n";
 			print_r($user_key_public);
+			echo "\n";
 			echo "\n--------------------------------------------------\n\n";
 			print_r(base64_encode($challenge) . "\n");
 			echo "\n--------------------------------------------------\n\n";

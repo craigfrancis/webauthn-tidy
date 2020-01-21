@@ -475,25 +475,73 @@
 
 			if (data['flags']['AT']) {
 
-				var aaguid = dataView.buffer.slice(offset, offset + 16); offset += 16;
-				var credentialIdLength = dataView.getUint16(offset); offset += 2; // 53 to 55
-				var credentialId = dataView.buffer.slice(offset, credentialIdLength); offset += credentialIdLength;
-				var publicKeyBytes = dataView.buffer.slice(offset);
-				var publicKeyObject = CBOR.decode(publicKeyBytes);
+				//--------------------------------------------------
+				// Main details
 
-				offset += publicKeyObject['length']; // The only way to determine the 'credentialPublicKey' size is via the CBOR encoded value.
+					var aaguid = dataView.buffer.slice(offset, offset + 16); offset += 16;
+					var credentialIdLength = dataView.getUint16(offset); offset += 2; // 53 to 55
+					var credentialId = dataView.buffer.slice(offset, credentialIdLength); offset += credentialIdLength;
+					var publicKeyBytes = dataView.buffer.slice(offset);
+					var publicKeyObject = CBOR.decode(publicKeyBytes);
 
-				data['attestedCredentialData'] = {
-						'aaguid': buffer_to_base64(aaguid),
-						'credentialId': buffer_to_base64(credentialId),
-						'publicKey': {
-								'type': publicKeyObject['data'][1], // 2 = Elliptic Curve; using more magic numbers for keys and values, does this save a few bytes somewhere?
-								'algorithm': publicKeyObject['data'][3], // -7 = ECDSA with SHA256
-								'curve_type': publicKeyObject['data'][-1], // 1 = P-256
-								'curve_x': uint8array_to_base64(publicKeyObject['data'][-2]),
-								'curve_y': uint8array_to_base64(publicKeyObject['data'][-3])
-							},
-					};
+					offset += publicKeyObject['length']; // The only way to determine the 'credentialPublicKey' size is via the CBOR encoded value.
+
+				//--------------------------------------------------
+				// PEM version
+
+						// https://github.com/lbuchs/WebAuthn/blob/master/Attestation/AuthenticatorData.php
+						// @author Lukas Buchs
+						// @license https://github.com/lbuchs/WebAuthn/blob/master/LICENSE MIT
+
+					var pem_prefix = new Uint8Array([ // ASN.1 DER encoding, aka X.690 ... https://en.wikipedia.org/wiki/X.690
+
+							0x30, // DER Sequence
+							0x59, // Length (2+19 + 2+66) = 89
+
+								0x30, // DER Sequence
+								0x13, // Length (2+7 + 2+8) = 19
+
+									0x06, // DER OBJECT IDENTIFIER
+									0x07, // Length
+									0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01, // OID 1.2.840.10045.2.1 ecPublicKey
+
+									0x06, // DER OBJECT IDENTIFIER
+									0x08, // Length
+									0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07, // OID 1.2.840.10045.3.1.7 prime256v1
+
+								0x03, // DER BIT STRING
+								0x42, // Length (32 + 32 + 1(null) + 1) = 66
+								0x00,
+
+									0x04, // ECC uncompressed... beginning of X9.62 Key
+
+						]);
+
+					var pem_content = new Uint8Array(pem_prefix.byteLength + publicKeyObject['data'][-2].byteLength + publicKeyObject['data'][-3].byteLength);
+
+					pem_content.set(pem_prefix, 0);
+					pem_content.set(publicKeyObject['data'][-2], pem_prefix.byteLength);
+					pem_content.set(publicKeyObject['data'][-3], pem_prefix.byteLength + publicKeyObject['data'][-2].byteLength);
+
+					pem_content = uint8array_to_base64(pem_content);
+					pem_content = pem_content.match(/.{0,64}/g).join("\n").trim();
+					pem_content = '-----BEGIN PUBLIC KEY-----' + "\n" + pem_content + "\n" + '-----END PUBLIC KEY-----';
+
+				//--------------------------------------------------
+				// Store
+
+					data['attestedCredentialData'] = {
+							'aaguid': buffer_to_base64(aaguid),
+							'credentialId': buffer_to_base64(credentialId),
+							'publicKey': {
+									'type': publicKeyObject['data'][1], // 2 = Elliptic Curve; using more magic numbers for keys and values, does this save a few bytes somewhere?
+									'algorithm': publicKeyObject['data'][3], // -7 = ECDSA with SHA256
+									'curve_type': publicKeyObject['data'][-1], // 1 = P-256
+									'curve_x': uint8array_to_base64(publicKeyObject['data'][-2]),
+									'curve_y': uint8array_to_base64(publicKeyObject['data'][-3]),
+									'pem': pem_content
+								},
+						};
 
 			}
 
