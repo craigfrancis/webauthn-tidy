@@ -3,7 +3,7 @@
 
 Experimenting with making WebAuthn easier to use:
 
-- Converting Uint8Array/ArrayBuffer values to base64 encoding, so that data can be easily sent to/from the server.
+- Converting Uint8Array/ArrayBuffer values to base64, so that data can be easily sent to/from the server.
 
 - Providing the public key in PEM format, as many systems can use this directly.
 
@@ -13,7 +13,7 @@ Experimenting with making WebAuthn easier to use:
 
 - Avoiding the `attestedCredentialData` length issue, where mistakes are easily made.
 
-- Trying to use normal base64 encoding (where possible), rather than the less well supported base64url (aka rfc4648).
+- Using normal base64 encoding (where possible), rather than the less common base64url (rfc4648).
 
 - Potentially making a version that could be done in HTML only (without JavaScript).
 
