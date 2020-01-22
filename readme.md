@@ -1,11 +1,21 @@
 
 # WebAuthn Cleanup
 
-Experimenting with making WebAuthn easier to use.
+Experimenting with making WebAuthn easier to use:
 
-Primarily trying to avoid **CBOR** encoding.
+- Converting Uint8Array/ArrayBuffer values to base64 encoding, so that data can be easily sent to/from the server.
 
-And providing the binary data in base64 encoding for easy transport to the server - rather than Uint8Array/ArrayBuffer, or the less well supported base64url (aka rfc4648).
+- Providing the public key in PEM format, as many systems can use this directly.
+
+- Providing the `flags` and `signCount` in an easy to read format.
+
+- Avoiding CBOR decoding (few systems support this).
+
+- Avoiding the `attestedCredentialData` length issue, where mistakes are easily made.
+
+- Trying to use normal base64 encoding (where possible), rather than the less well supported base64url (aka rfc4648).
+
+- Potentially making a version that could be done in HTML only (without JavaScript).
 
 [Discussion](https://github.com/w3c/webauthn/issues/1362)
 
