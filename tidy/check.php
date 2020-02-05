@@ -20,14 +20,14 @@
 	$create_auth = ($_SESSION['webauthn_data_create'] ?? ''); // Only for debugging.
 
 	$user_key_id = ($_SESSION['user_key_id'] ?? '');
-	$user_key_public = ($_SESSION['user_key_public'] ?? '');
+	$user_key_value = ($_SESSION['user_key_value'] ?? '');
 
 	if (!$user_key_id) {
 		exit('Missing user key id in session.');
 	}
 
-	if (!$user_key_public) {
-		exit('Missing user key public in session.');
+	if (!$user_key_value) {
+		exit('Missing user key value in session.');
 	}
 
 //--------------------------------------------------
@@ -121,9 +121,9 @@
 
 			if (count($errors) == 0) {
 
-				$key_public = openssl_pkey_get_public($user_key_public);
+				$key_ref = openssl_pkey_get_public($user_key_value);
 
-				if ($key_public === false) {
+				if ($key_ref === false) {
 
 					$errors[] = 'Public key invalid.';
 
@@ -133,7 +133,7 @@
 					$verify_data .= $auth_data;
 					$verify_data .= hash('sha256', $client_data_json, true); // Contains the $challenge
 
-					if (openssl_verify($verify_data, $signature, $key_public, OPENSSL_ALGO_SHA256) === 1) {
+					if (openssl_verify($verify_data, $signature, $key_ref, OPENSSL_ALGO_SHA256) === 1) {
 						$errors[] = 'Success!';
 					} else {
 						$errors[] = 'Invalid signature.';
@@ -153,7 +153,7 @@
 			echo "\n--------------------------------------------------\n\n";
 			echo 'Sign Count: ' . ($webauthn_data['auth']['signCount'] ?? 0) . "\n";
 			echo "\n--------------------------------------------------\n\n";
-			print_r($user_key_public);
+			print_r($user_key_value);
 			echo "\n--------------------------------------------------\n\n";
 			print_r(base64_encode($challenge) . "\n");
 			echo "\n--------------------------------------------------\n\n";
@@ -180,8 +180,8 @@
 	<h2>Stored Key ID</h2>
 	<p><pre><?= htmlentities($user_key_id) ?></pre></p>
 
-	<h2>Stored Key Public</h2>
-	<p><pre><?= htmlentities($user_key_public) ?></pre></p>
+	<h2>Stored Key Value</h2>
+	<p><pre><?= htmlentities($user_key_value) ?></pre></p>
 
 	<h2>Check Details</h2>
 	<form action="<?= htmlentities($uri) ?>" method="post" accept-charset="UTF-8">

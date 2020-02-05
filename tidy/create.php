@@ -80,7 +80,7 @@
 				$errors[] = 'The challenge has changed.';
 			}
 
-				// No further checks for $challenge?
+				// Only use $challenge check for attestation
 
 		//--------------------------------------------------
 		// Get public key
@@ -110,7 +110,7 @@
 				$_SESSION['webauthn_data_create'] = $webauthn_data; // Only for debugging.
 
 				$_SESSION['user_key_id'] = $webauthn_data['id'];
-				$_SESSION['user_key_public'] = $key_pem;
+				$_SESSION['user_key_value'] = $key_pem;
 
 				// Ignore $webauthn_data['auth']['signCount'], it's set to 0.
 
