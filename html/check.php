@@ -112,7 +112,9 @@
 			}
 
 		//--------------------------------------------------
-		// Check
+		// Key
+
+			$key_info = NULL;
 
 			if (count($errors) == 0) {
 
@@ -124,16 +126,37 @@
 
 				} else {
 
-					$verify_data  = '';
-					$verify_data .= $auth_data;
-					$verify_data .= hash('sha256', $client_data_json, true); // Contains the $challenge
+					$key_info = openssl_pkey_get_details($key_public);
 
-					if (openssl_verify($verify_data, $signature, $key_public, OPENSSL_ALGO_SHA256) === 1) {
-						$errors[] = 'Success!';
+					if ($key_info['type'] == OPENSSL_KEYTYPE_EC) {
+
+						if ($key_info['ec']['curve_oid'] != '1.2.840.10045.3.1.7') {
+							$errors[] = 'Invalid public key curve identifier';
+						}
+
 					} else {
-						$errors[] = 'Invalid signature.';
+
+						$errors[] = 'Unknown public key type (' . $key_info['type'] . ')';
+
 					}
 
+				}
+
+			}
+
+		//--------------------------------------------------
+		// Check
+
+			if (count($errors) == 0) {
+
+				$verify_data  = '';
+				$verify_data .= $auth_data;
+				$verify_data .= hash('sha256', $client_data_json, true); // Contains the $challenge
+
+				if (openssl_verify($verify_data, $signature, $key_public, OPENSSL_ALGO_SHA256) === 1) {
+					$errors[] = 'Success!';
+				} else {
+					$errors[] = 'Invalid signature.';
 				}
 
 			}
