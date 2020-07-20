@@ -564,8 +564,8 @@
 
 					return new Promise(function(resolve, reject) {
 
-							options['publicKey']['user']['id'] = base64_to_uint8array(options['publicKey']['user']['id']);
 							options['publicKey']['challenge'] = base64_to_uint8array(options['publicKey']['challenge']);
+							options['publicKey']['user']['id'] = base64_to_uint8array(options['publicKey']['user']['id']);
 
 							navigator.credentials.create(options).then(function(result) {
 

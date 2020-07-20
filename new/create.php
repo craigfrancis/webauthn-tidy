@@ -39,14 +39,14 @@
 		//--------------------------------------------------
 		// Client data
 
-			$client_data_json = base64_decode($webauthn_data['clientDataJSON'] ?? '');
+			$client_data_json = base64_decode($webauthn_data['response']['clientDataJSON'] ?? '');
 
 			$client_data = json_decode($client_data_json, true);
 
 		//--------------------------------------------------
 		// Auth data
 
-			$auth_data = base64_decode($webauthn_data['authenticatorData']);
+			$auth_data = base64_decode($webauthn_data['response']['authenticatorData']);
 
 			$auth_data_relying_party_id = substr($auth_data, 0, 32); // rpIdHash
 			$auth_data_flags            = substr($auth_data, 32, 1);
@@ -89,12 +89,12 @@
 		//--------------------------------------------------
 		// Get public key
 
-			$key_der = ($webauthn_data['publicKey'] ?? NULL);
+			$key_der = ($webauthn_data['response']['publicKey'] ?? NULL);
 			if (!$key_der) {
 				$errors[] = 'No public key found.';
 			}
 
-			if (($webauthn_data['publicKeyAlg'] ?? NULL) !== $algorithm) {
+			if (($webauthn_data['response']['publicKeyAlg'] ?? NULL) !== $algorithm) {
 				$errors[] = 'Different algorithm used.';
 			}
 

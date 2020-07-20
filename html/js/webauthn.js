@@ -569,8 +569,8 @@
 			button.setAttribute('disabled', 'disabled');
 
 			options = JSON.parse(options);
-			options['publicKey']['user']['id'] = base64_to_uint8array(options['publicKey']['user']['id']);
 			options['publicKey']['challenge'] = base64_to_uint8array(options['publicKey']['challenge']);
+			options['publicKey']['user']['id'] = base64_to_uint8array(options['publicKey']['user']['id']);
 
 			navigator.credentials.create(options).then(function(result) {
 
@@ -583,11 +583,11 @@
 					// Make result JSON friendly.
 
 						var output = {
-								'id': result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
+								'id':   result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
 								'type': result.type,
 								'auth': authenticator_buffer_parse(uint8array_to_buffer(attestation_object['data'].authData)), // Something most websites will use; ref https://github.com/w3c/webauthn/issues/557
 								'response': {
-										'clientDataJSON': buffer_to_base64(result.response.clientDataJSON),
+										'clientDataJSON':    buffer_to_base64(result.response.clientDataJSON),
 										'attestationObject': uint8array_to_base64(result.response.attestationObject),
 									}
 							};
@@ -640,11 +640,13 @@
 					// Make result JSON friendly.
 
 						var output = {
-								'id':                result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
-								'type':              result.type,
-								'clientDataJSON':    buffer_to_base64(result.response.clientDataJSON),
-								'authenticatorData': buffer_to_base64(result.response.authenticatorData),
-								'signature':         buffer_to_base64(result.response.signature)
+								'id':   result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
+								'type': result.type,
+								'response': {
+										'clientDataJSON':    buffer_to_base64(result.response.clientDataJSON),
+										'authenticatorData': buffer_to_base64(result.response.authenticatorData),
+										'signature':         buffer_to_base64(result.response.signature)
+									}
 							};
 
 					//--------------------------------------------------

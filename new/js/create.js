@@ -53,12 +53,14 @@
 					// Make result JSON friendly.
 
 						var output = {
-								'id':                result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
-								'type':              result.type,
-								'clientDataJSON':    buffer_to_base64(result.response.clientDataJSON),
-								'authenticatorData': buffer_to_base64(result.response.getAuthenticatorData()),
-								'publicKey':         buffer_to_base64(result.response.getPublicKey()),
-								'publicKeyAlg':      result.response.getPublicKeyAlgorithm(),
+								'id':   result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
+								'type': result.type,
+								'response': {
+										'clientDataJSON':    buffer_to_base64(result.response.clientDataJSON),
+										'authenticatorData': buffer_to_base64(result.response.getAuthenticatorData()),
+										'publicKey':         buffer_to_base64(result.response.getPublicKey()),
+										'publicKeyAlg':      result.response.getPublicKeyAlgorithm()
+									}
 							};
 
 					//--------------------------------------------------

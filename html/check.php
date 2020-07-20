@@ -55,14 +55,14 @@
 		//--------------------------------------------------
 		// Client data
 
-			$client_data_json = base64_decode($webauthn_data['clientDataJSON'] ?? '');
+			$client_data_json = base64_decode($webauthn_data['response']['clientDataJSON'] ?? '');
 
 			$client_data = json_decode($client_data_json, true);
 
 		//--------------------------------------------------
 		// Auth data
 
-			$auth_data = base64_decode($webauthn_data['authenticatorData']);
+			$auth_data = base64_decode($webauthn_data['response']['authenticatorData']);
 
 			$auth_data_relying_party_id = substr($auth_data, 0, 32); // rpIdHash
 			$auth_data_flags            = substr($auth_data, 32, 1);
@@ -107,7 +107,7 @@
 		//--------------------------------------------------
 		// Check signature
 
-			$signature = ($webauthn_data['signature'] ?? '');
+			$signature = ($webauthn_data['response']['signature'] ?? '');
 			if ($signature) {
 				$signature = base64_decode($signature);
 			}
