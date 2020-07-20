@@ -174,6 +174,7 @@
 	<meta charset="UTF-8" />
 	<title>Create</title>
 	<script src="./js/create.js" async="async"></script>
+	<script src="./js/polyfill.js" async="async"></script>
 </head>
 <body>
 
