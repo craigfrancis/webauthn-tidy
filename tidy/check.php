@@ -121,7 +121,9 @@
 
 			if (count($errors) == 0) {
 
-				$user_key_pem = '-----BEGIN PUBLIC KEY-----' . "\n" . wordwrap($user_key_value, 64, "\n", true) . "\n" . '-----END PUBLIC KEY-----';
+				$user_key_pem  = '-----BEGIN PUBLIC KEY-----' . "\n";
+				$user_key_pem .= wordwrap($user_key_value, 64, "\n", true) . "\n";
+				$user_key_pem .= '-----END PUBLIC KEY-----';
 
 				$key_ref = openssl_pkey_get_public($user_key_pem);
 
