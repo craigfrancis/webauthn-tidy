@@ -25,12 +25,12 @@ Experimenting with making WebAuthn easier to use:
 
 If the browser could implement something like this JavaScript to provide a [way to use WebAuthn without Javascript](https://github.com/w3c/webauthn/issues/1255):
 
-https://github.com/craigfrancis/webauthn-tidy/blob/master/html/js/webauthn.js?ts=4
+https://github.com/craigfrancis/webauthn-tidy/blob/main/html/js/webauthn.js?ts=4
 
 Then the HTML and Server side code would be considerably easier:
 
-- [Create](https://github.com/craigfrancis/webauthn-tidy/blob/master/html/create.php?ts=4)
-- [Check](https://github.com/craigfrancis/webauthn-tidy/blob/master/html/check.php?ts=4)
+- [Create](https://github.com/craigfrancis/webauthn-tidy/blob/main/html/create.php?ts=4)
+- [Check](https://github.com/craigfrancis/webauthn-tidy/blob/main/html/check.php?ts=4)
 
 ---
 
@@ -38,8 +38,8 @@ Then the HTML and Server side code would be considerably easier:
 
 While no browsers currently support this, there is a new "[getPublicKey()](https://github.com/w3c/webauthn/issues/1363)" method.
 
-- [Create](https://github.com/craigfrancis/webauthn-tidy/blob/master/new/create.php?ts=4)
-- [Check](https://github.com/craigfrancis/webauthn-tidy/blob/master/new/check.php?ts=4)
+- [Create](https://github.com/craigfrancis/webauthn-tidy/blob/main/new/create.php?ts=4)
+- [Check](https://github.com/craigfrancis/webauthn-tidy/blob/main/new/check.php?ts=4)
 
 ---
 
@@ -47,9 +47,9 @@ While no browsers currently support this, there is a new "[getPublicKey()](https
 
 If not, then this JS will make an easier to use `window.navigator.credentials2`:
 
-https://github.com/craigfrancis/webauthn-tidy/blob/master/tidy/js/tidy.js?ts=4
+https://github.com/craigfrancis/webauthn-tidy/blob/main/tidy/js/tidy.js?ts=4
 
 So individual websites will find it easier to implement in their:
 
-- Create [HTML](https://github.com/craigfrancis/webauthn-tidy/blob/master/tidy/create.php?ts=4) and [JS](https://github.com/craigfrancis/webauthn-tidy/blob/master/tidy/js/create.js?ts=4)
-- Check [HTML](https://github.com/craigfrancis/webauthn-tidy/blob/master/tidy/check.php?ts=4) and [JS](https://github.com/craigfrancis/webauthn-tidy/blob/master/tidy/js/check.js?ts=4)
+- Create [HTML](https://github.com/craigfrancis/webauthn-tidy/blob/main/tidy/create.php?ts=4) and [JS](https://github.com/craigfrancis/webauthn-tidy/blob/main/tidy/js/create.js?ts=4)
+- Check [HTML](https://github.com/craigfrancis/webauthn-tidy/blob/main/tidy/check.php?ts=4) and [JS](https://github.com/craigfrancis/webauthn-tidy/blob/main/tidy/js/check.js?ts=4)
