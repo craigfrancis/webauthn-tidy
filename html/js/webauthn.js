@@ -640,14 +640,11 @@
 					// Make result JSON friendly.
 
 						var output = {
-								'id': result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
-								'type': result.type,
-								'auth': authenticator_buffer_parse(result.response.authenticatorData),
-								'response': {
-										'clientDataJSON': buffer_to_base64(result.response.clientDataJSON),
-										'signature': buffer_to_base64(result.response.signature),
-										'authenticatorData': buffer_to_base64(result.response.authenticatorData),
-									}
+								'id':                result.id.replace(/-/g, '+').replace(/_/g, '/'), // Use normal base64, not base64url (rfc4648)
+								'type':              result.type,
+								'clientDataJSON':    buffer_to_base64(result.response.clientDataJSON),
+								'authenticatorData': buffer_to_base64(result.response.authenticatorData),
+								'signature':         buffer_to_base64(result.response.signature)
 							};
 
 					//--------------------------------------------------

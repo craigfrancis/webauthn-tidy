@@ -55,14 +55,19 @@
 		//--------------------------------------------------
 		// Client data
 
-			$client_data_json = base64_decode($webauthn_data['response']['clientDataJSON'] ?? '');
+			$client_data_json = base64_decode($webauthn_data['clientDataJSON'] ?? '');
 
 			$client_data = json_decode($client_data_json, true);
 
 		//--------------------------------------------------
 		// Auth data
 
-			$auth_data = base64_decode($webauthn_data['response']['authenticatorData']);
+			$auth_data = base64_decode($webauthn_data['authenticatorData']);
+
+			$auth_data_relying_party_id = substr($auth_data, 0, 32); // rpIdHash
+			$auth_data_flags            = substr($auth_data, 32, 1);
+			$auth_data_sign_count       = substr($auth_data, 33, 4);
+			$auth_data_sign_count       = intval(implode('', unpack('N*', $auth_data_sign_count))); // 32-bit unsigned big-endian integer
 
 		//--------------------------------------------------
 		// Checks basic
@@ -83,7 +88,7 @@
 				$errors[] = 'Returned origin is not "' . $origin . '".';
 			}
 
-			if (!hash_equals(hash('sha256', $host), ($webauthn_data['auth']['rpIdHash'] ?? ''))) {
+			if (strlen($auth_data_relying_party_id) != 32 || !hash_equals(hash('sha256', $host), bin2hex($auth_data_relying_party_id))) {
 				$errors[] = 'The Relying Party ID hash is not the same.';
 			}
 
@@ -102,7 +107,7 @@
 		//--------------------------------------------------
 		// Check signature
 
-			$signature = ($webauthn_data['response']['signature'] ?? '');
+			$signature = ($webauthn_data['signature'] ?? '');
 			if ($signature) {
 				$signature = base64_decode($signature);
 			}
@@ -171,7 +176,7 @@
 			echo "\n--------------------------------------------------\n\n";
 			print_r($errors);
 			echo "\n--------------------------------------------------\n\n";
-			echo 'Sign Count: ' . ($webauthn_data['auth']['signCount'] ?? 0) . "\n";
+			echo 'Sign Count: ' . $auth_data_sign_count . "\n";
 			echo "\n--------------------------------------------------\n\n";
 			print_r($user_key_value);
 			echo "\n";
