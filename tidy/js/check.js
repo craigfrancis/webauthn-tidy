@@ -3,7 +3,7 @@
 
 	'use strict';
 
-	function credential_create() {
+	function credential_get() {
 
 		if (!('credentials2' in window.navigator)) {
 			console.log('Credentials2 is not ready');
@@ -47,7 +47,7 @@
 
 		var inputs = document.querySelectorAll('form input[data-auth-key-ids]');
 		for (var k = (inputs.length - 1); k >= 0; k--) {
-			inputs[k].addEventListener('click', credential_create);
+			inputs[k].addEventListener('click', credential_get);
 		}
 
 	}
