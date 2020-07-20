@@ -80,7 +80,7 @@
 		// Get public key
 
 			$key_details = ($webauthn_data['auth']['attestedCredentialData']['publicKey'] ?? '');
-			$key_pem = NULL;
+			$key_der = NULL;
 
 			if (!$key_details) {
 
@@ -92,7 +92,7 @@
 
 			} else {
 
-				$key_pem = $key_details['pem'];
+				$key_der = $key_details['der'];
 
 			}
 
@@ -104,7 +104,7 @@
 				$_SESSION['webauthn_data_create'] = $webauthn_data; // Only for debugging.
 
 				$_SESSION['user_key_id'] = $webauthn_data['id'];
-				$_SESSION['user_key_value'] = $key_pem;
+				$_SESSION['user_key_value'] = $key_der;
 
 				// Ignore $webauthn_data['auth']['signCount'], it's set to 0.
 
@@ -125,7 +125,7 @@
 			echo "\n--------------------------------------------------\n\n";
 			print_r($webauthn_data);
 			echo "\n--------------------------------------------------\n\n";
-			print_r($key_pem);
+			print_r($key_der);
 			echo "\n--------------------------------------------------\n\n";
 			exit();
 

@@ -487,13 +487,13 @@
 					offset += publicKeyObject['length']; // The only way to determine the 'credentialPublicKey' size is via the CBOR encoded value.
 
 				//--------------------------------------------------
-				// PEM version
+				// DER version
 
 						// https://github.com/lbuchs/WebAuthn/blob/master/Attestation/AuthenticatorData.php
 						// @author Lukas Buchs
 						// @license https://github.com/lbuchs/WebAuthn/blob/master/LICENSE MIT
 
-					var pem_prefix = new Uint8Array([ // ASN.1 DER encoding, aka X.690 ... https://en.wikipedia.org/wiki/X.690
+					var der_prefix = new Uint8Array([ // ASN.1 DER encoding, aka X.690 ... https://en.wikipedia.org/wiki/X.690
 
 							0x30, // DER Sequence
 							0x59, // Length (2+19 + 2+66) = 89
@@ -517,15 +517,16 @@
 
 						]);
 
-					var pem_content = new Uint8Array(pem_prefix.byteLength + publicKeyObject['data'][-2].byteLength + publicKeyObject['data'][-3].byteLength);
+					var der_content = new Uint8Array(der_prefix.byteLength + publicKeyObject['data'][-2].byteLength + publicKeyObject['data'][-3].byteLength);
 
-					pem_content.set(pem_prefix, 0);
-					pem_content.set(publicKeyObject['data'][-2], pem_prefix.byteLength);
-					pem_content.set(publicKeyObject['data'][-3], pem_prefix.byteLength + publicKeyObject['data'][-2].byteLength);
+					der_content.set(der_prefix, 0);
+					der_content.set(publicKeyObject['data'][-2], der_prefix.byteLength);
+					der_content.set(publicKeyObject['data'][-3], der_prefix.byteLength + publicKeyObject['data'][-2].byteLength);
 
-					pem_content = uint8array_to_base64(pem_content);
-					pem_content = pem_content.match(/.{0,64}/g).join("\n").trim();
-					pem_content = '-----BEGIN PUBLIC KEY-----' + "\n" + pem_content + "\n" + '-----END PUBLIC KEY-----';
+					der_content = uint8array_to_base64(der_content);
+
+					// var pem_content = der_content.match(/.{0,64}/g).join("\n").trim();
+					// pem_content = '-----BEGIN PUBLIC KEY-----' + "\n" + pem_content + "\n" + '-----END PUBLIC KEY-----';
 
 				//--------------------------------------------------
 				// Store
@@ -539,7 +540,7 @@
 									'curve_type': publicKeyObject['data'][-1], // 1 = P-256
 									'curve_x': uint8array_to_base64(publicKeyObject['data'][-2]),
 									'curve_y': uint8array_to_base64(publicKeyObject['data'][-3]),
-									'pem': pem_content
+									'der': der_content
 								},
 						};
 

@@ -5,7 +5,7 @@ Experimenting with making WebAuthn easier to use:
 
 - Converting Uint8Array/ArrayBuffer values to base64, so that data can be easily sent to/from the server.
 
-- Providing the public key in PEM format, as many systems can use this directly.
+- Providing the public key in DER format, similar to PEM, as many systems can use this directly.
 
 - Providing the `flags` and `signCount` in an easy to read format.
 
