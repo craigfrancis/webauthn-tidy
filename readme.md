@@ -34,6 +34,15 @@ Then the HTML and Server side code would be considerably easier:
 
 ---
 
+## API Version 2
+
+While no browsers currently support this, there is a new "[getPublicKey()](https://github.com/w3c/webauthn/issues/1363)" method.
+
+- [Create](https://github.com/craigfrancis/webauthn-tidy/blob/master/new/create.php?ts=4)
+- [Check](https://github.com/craigfrancis/webauthn-tidy/blob/master/new/check.php?ts=4)
+
+---
+
 ## API Alternative
 
 If not, then this JS will make an easier to use `window.navigator.credentials2`:
