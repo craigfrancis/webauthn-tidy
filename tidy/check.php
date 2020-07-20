@@ -60,7 +60,7 @@
 		//--------------------------------------------------
 		// Client data
 
-			$client_data_json = base64_decode($webauthn_data['response']['clientDataJSON']);
+			$client_data_json = base64_decode($webauthn_data['response']['clientDataJSON'] ?? '');
 
 			$client_data = json_decode($client_data_json, true);
 
