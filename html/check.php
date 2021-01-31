@@ -11,7 +11,7 @@
 	$method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
 	header("Content-Security-Policy: default-src 'none'; base-uri 'none'; form-action " . $origin . $uri . "; img-src " . $origin . "; script-src " . $origin . "/html/js/; frame-ancestors 'none'; block-all-mixed-content;");
-	header("Feature-Policy: accelerometer 'none'; autoplay 'none'; camera 'none'; document-domain 'none'; encrypted-media 'none'; fullscreen 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; payment 'none'; usb 'none'; xr-spatial-tracking 'none'; sync-xhr 'none'; picture-in-picture 'none';");
+	header("Feature-Policy: accelerometer 'none'; autoplay 'none'; camera 'none'; ch-dpr 'none'; ch-device-memory 'none'; ch-downlink 'none'; ch-ect 'none'; ch-lang 'none'; ch-rtt 'none'; ch-ua 'none'; ch-ua-arch 'none'; ch-ua-platform 'none'; ch-ua-model 'none'; ch-ua-mobile 'none'; ch-ua-full-version 'none'; ch-ua-platform-version 'none'; ch-viewport-width 'none'; ch-width 'none'; clipboard-read 'none'; clipboard-write 'none'; cross-origin-isolated 'self'; document-domain 'none'; encrypted-media 'none'; fullscreen 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; payment 'none'; publickey-credentials-get 'self'; screen-wake-lock 'none'; usb 'none'; xr-spatial-tracking 'none'; sync-xhr 'none'; picture-in-picture 'none';");
 
 	session_start();
 
